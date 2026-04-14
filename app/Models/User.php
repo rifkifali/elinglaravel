@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,34 +11,50 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
-        'email',
+        'nama_lengkap',
+        'nip',
         'password',
+        'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
     ];
+
+    public function penugasan()
+    {
+        return $this->hasMany(Penugasan::class, 'perancang_id');
+    }
+
+    public function lembarKendali()
+    {
+        return $this->hasMany(LembarKendali::class, 'aktor_id');
+    }
+
+    // Helper: cek role
+    public function isAdmin(): bool        { return $this->role === 'Admin'; }
+    public function isPerancang(): bool    { return $this->role === 'Perancang'; }
+    public function isKasubbag(): bool     { return $this->role === 'Kasubbag'; }
+    public function isKabag(): bool        { return $this->role === 'Kabag'; }
+    public function isSuperAdmin(): bool   { return $this->role === 'Super Admin'; }
+
+    // Redirect setelah login berdasarkan role
+    public function dashboardRoute(): string
+    {
+        return match($this->role) {
+            'Admin'       => 'admin.index',
+            'Perancang'   => 'perancang.index',
+            'Kasubbag'    => 'kasubbag.index',
+            'Kabag'       => 'kabag.index',
+            'Super Admin' => 'superadmin.index',
+            default       => 'login',
+        };
+    }
 }
